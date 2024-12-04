@@ -72,10 +72,6 @@ void Sample(const std::string& coPath, const std::uint32_t& length)
 
     std::memcpy(cpuRef.data(), cpuInput.data(), cpuInput.size() * sizeof(T));
 
-    for (std::size_t i = 0; i < length; ++i) {
-        std::cout << "Tony Ref " << float(cpuInput[i]) << std::endl;
-    }
-
     T *gpuOutput{};
     err = hipMalloc(&gpuOutput, sizeof(T) * length);
     err = hipMemset(gpuOutput, 0, sizeof(T) * length);
@@ -98,7 +94,7 @@ void Sample(const std::string& coPath, const std::uint32_t& length)
     err = hipMemcpyDtoH(cpuOutput.data(), gpuOutput, cpuInput.size() * sizeof(T));
 
     for (std::size_t i = 0; i < length; ++i) {
-        std::cout << "Tony GPU " << float(cpuOutput[i]) << std::endl;
+        std::cout << "Tony GPU " << float(cpuOutput[i]) << " Ref " << float(cpuInput[i]) << std::endl;
     }
 
     err = hipFree(gpuOutput);

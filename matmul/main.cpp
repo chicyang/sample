@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    Sample<__hip_fp8_e4m3_fnuz>(16, 16, 32);
+    Sample<__hip_fp8_e4m3_fnuz>(16, 16, 128);
 
     return 0;
 

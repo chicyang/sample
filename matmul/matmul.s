@@ -8,8 +8,8 @@
 .p2align 6
 .amdhsa_kernel MatMul
   .amdhsa_user_sgpr_kernarg_segment_ptr 1
-  .amdhsa_accum_offset 16 // accvgpr offset
-  .amdhsa_next_free_vgpr 24 // vgprs
+  .amdhsa_accum_offset 32 // accvgpr offset
+  .amdhsa_next_free_vgpr 40 // vgprs
   .amdhsa_next_free_sgpr 32 // sgprs
   .amdhsa_group_segment_fixed_size 32 // lds bytes
   .amdhsa_private_segment_fixed_size 0
@@ -56,7 +56,7 @@ amdhsa.kernels:
   .private_segment_fixed_size: 0
   .sgpr_count: 32
   .symbol: MatMul.kd
-  .vgpr_count: 16
+  .vgpr_count: 40
   .wavefront_size: 64
 amdhsa.version:
 - 1
@@ -69,9 +69,9 @@ amdhsa.version:
 .set vgprIndexT,  2  // tile
 .set vgprIndexU,  3  // unroll
 .set vgprValueA,  4
-.set vgprValueB,  6
-.set vgprValueC,  8
-.set vgprTmp,    12
+.set vgprValueB,  12
+.set vgprValueC,  20
+.set vgprTmp,    24
 
 .set sgprKernelArg,   0
 .set sgprWorkGroup0,  2
@@ -129,12 +129,14 @@ v_and_b32 v[vgprIndexT], v[vgprSerial], 15
 v_lshrrev_b32 v[vgprIndexU], 4, v[vgprSerial]
 
 v_mul_u32_u24 v[vgprTmp], v[vgprIndexT], s[sgprSizeK]
-v_lshlrev_b32 v[vgprOffset], 3, v[vgprIndexU]
+v_mul_u32_u24 v[vgprOffset], 32, v[vgprIndexU]
 v_add_u32 v[vgprOffset], v[vgprOffset], v[vgprTmp]
 
 
-buffer_load_dwordx2 v[vgprValueA:vgprValueA+1], v[vgprOffset], s[sgprSrcA:sgprSrcA+3], 0 offen offset:0
-buffer_load_dwordx2 v[vgprValueB:vgprValueB+1], v[vgprOffset], s[sgprSrcB:sgprSrcB+3], 0 offen offset:0
+buffer_load_dwordx4 v[vgprValueA+0:vgprValueA+3], v[vgprOffset], s[sgprSrcA:sgprSrcA+3], 0 offen offset:0
+buffer_load_dwordx4 v[vgprValueA+4:vgprValueA+7], v[vgprOffset], s[sgprSrcA:sgprSrcA+3], 0 offen offset:16
+buffer_load_dwordx4 v[vgprValueB+0:vgprValueB+3], v[vgprOffset], s[sgprSrcB:sgprSrcB+3], 0 offen offset:0
+buffer_load_dwordx4 v[vgprValueB+4:vgprValueB+7], v[vgprOffset], s[sgprSrcB:sgprSrcB+3], 0 offen offset:16
 s_waitcnt vmcnt(0)
 
 v_accvgpr_write acc0, 0x0
@@ -143,7 +145,10 @@ v_accvgpr_write acc2, 0x0
 v_accvgpr_write acc3, 0x0
 
 s_nop 7
-v_mfma_f32_16x16x32_fp8_fp8 acc[0:3], v[vgprValueB:vgprValueB+1], v[vgprValueA:vgprValueA+1], acc[0:3]
+v_mfma_f32_16x16x32_fp8_fp8 acc[0:3], v[vgprValueB+0:vgprValueB+1], v[vgprValueA+0:vgprValueA+1], acc[0:3]
+v_mfma_f32_16x16x32_fp8_fp8 acc[0:3], v[vgprValueB+2:vgprValueB+3], v[vgprValueA+2:vgprValueA+3], acc[0:3]
+v_mfma_f32_16x16x32_fp8_fp8 acc[0:3], v[vgprValueB+4:vgprValueB+5], v[vgprValueA+4:vgprValueA+5], acc[0:3]
+v_mfma_f32_16x16x32_fp8_fp8 acc[0:3], v[vgprValueB+6:vgprValueB+7], v[vgprValueA+6:vgprValueA+7], acc[0:3]
 s_nop 7
 
 v_accvgpr_read_b32 v[vgprValueC+0], acc0
